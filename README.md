@@ -4,11 +4,11 @@ Simple utility to compile and run java programs via one command.
 #### Usage
 `jv [-0cdhrs] [filename...]`
 #### Options
-`-c <filename...>: Compile only`
-`-r <filename>: Run precompiled class`
-`-h: Help message`
-`-s <filename>: Compile and run without deleting classes after execute`
-`-d: Compile all java files in current directory`
+`-c <filename...>: Compile only`<br>
+`-r <filename>: Run precompiled class`<br>
+`-h: Help message`<br>
+`-s <filename>: Compile and run without deleting classes after execute`<br>
+`-d: Compile all java files in current directory`<br>
 `-0: Show only error messages`
 #### Installation
 When downloaded, run `bash jv` from the directory where is it located and it will create its' executable copy in `/usr/bin/`, then run `jv` from any place.
