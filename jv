@@ -1,0 +1,203 @@
+#!/bin/bash
+
+# JV
+# Description: Simple utility to compile and run java programs via one command.
+# Usage: jv [-0cdhrs] [filename...]
+# Options:
+#	-c <filename...>: Compile only
+#	-r <filename>: Run precompiled class
+#	-h: Help message
+#	-s <filename...>: Compile and run without deleting classes after execute
+#	-d: Compile *.java in current directory
+#	-0: Show only error messages
+# Author: Oleg Karataev (CrazyDoctor)
+# Date: 04.10.2020, 05:34
+# Version: 1.0
+
+R='\033[0;31m'
+NC='\033[0m'
+G='\033[0;32m'
+OG='\033[0;33m'
+Y='\033[1;33m'
+DGY='\033[1;30m'
+
+SWM=1
+
+error() {
+	if [[ $2 == 1 ]]; then # error with help info
+		echo -e "${R}Error:${NC} $1.\nUse -h for help."
+	elif [[ $2 == 2 ]]; then # compilation error
+		echo -e "${R}Compilation failed:${NC}\n$1"
+	else # simple error
+		echo -e "${R}Error:${NC} $1."
+	fi
+}
+
+warning() {
+	if [[ $SWM == 1 ]]; then
+		echo -e "${OG}Warning:${NC} $1."
+	fi
+}
+
+note() {
+	if [[ $SWM == 1 ]]; then
+		echo -e "${Y}Note:${NC} $1"
+	fi
+}
+
+success() {
+	if [[ $SWM == 1 ]]; then
+		echo -e "${G}Success!${NC} $1.\n================="
+	fi
+}
+
+install() {
+	if [ ! -f /usr/bin/jv ]; then
+		sudo cp ${0} /usr/bin/jv
+		sudo chmod +x /usr/bin/jv
+		sudo rm ${0}
+		if [ -f /usr/bin/jv ]; then
+			success "JV 1.0 installed successfully"
+			jv -h
+			exit 1
+		fi
+		exit 0
+	fi
+}
+
+mainclass() {
+	echo $(grep -E "*public\s+static\s+void\s+main\s*\(*\)*" *.java | awk -F ":" '{print $1}' | awk -F "." '{print $1}')
+}
+
+default() {
+	count=$(ls -1 *.java 2>/dev/null | wc -l)
+	if [ $count == 0 ]; then
+		error "No java files found" 1 && exit 1
+	fi
+	MC=$(mainclass)
+	if [ -z "$MC" ]; then
+		warning "Main class could not be found. Nothing to run.\nTry -r <filename> to run manually."
+		dir
+	else
+		note "Main class found automatically: ${MC}"
+		dir
+		run $MC
+	fi
+}
+
+run() {
+	FN=$1
+	if [ -z "$FN" ]; then
+		MC=$(mainclass)
+		if [ -z "$MC" ]; then
+			error "Nothing to run"
+		else
+			note "Main class found automatically: ${MC}"
+			java $MC
+		fi
+	else
+		if [ -f "$FN.class" ]; then
+			java $FN
+		else
+			error "$FN.class not found."
+		fi
+	fi
+}
+
+compile() {
+	FN=${@:1}
+	FS=$(echo $FN | tr " " "\n")
+	if [ -z "$FS" ]; then
+		error "Nothing to compile" 1 && exit 1
+	fi
+	for F in $FS; do
+		if [ -f "$F.java" ]; then
+			CERR=$(javac $F.java 2>&1)
+			if [ -f "$F.class" ]; then
+				success "$F.java compiled"	
+			else
+				error "$CERR" 2 && if [ -f "$F.class" ]; then rm $F.class; fi && exit 1
+			fi
+		fi
+	done	
+}
+
+dir() {
+	CERR=$(javac *.java 2>&1)
+	FS=$(find *.java | sed 's/\.java/\.class/')
+	for F in $FS; do
+		if [ -f "$F" ]; then
+			success "$F compiled"
+		else
+			error "$CERR" 2 && exit 1
+		fi	
+	done
+}
+
+safeCompileRun() {
+	FN="${@:1}"
+	FS=$(echo $FN | tr " " "\n")
+	for F in $FS; do
+		if [ -f "$F.java" ]; then
+			CERR=$(javac $F.java 2>&1)
+			if [ -f "$F.class" ]; then
+				success "$F.java compiled"
+				java $F
+			else
+				error "$CERR" 2 && if [ -f "$F.class" ]; then rm $F.class; fi && exit 1
+			fi
+		else
+			error "File $FN.java does not exist" && exit 1
+		fi
+	done
+}
+
+helpmsg() {
+	echo -e "${DGY}JV 1.0${NC}\n${DGY}Description:${NC}\n\tSimple utility to compile and run java programs via one command.\n${DGY}Usage:${NC}\n\t jv [-0cdhrs] [filename...]\n${DGY}Options:${NC}\n\t-c <filename...>: Compile only\n\t-r <filename>: Run precompiled class\n\t-h: Help message\n\t-s <filename...>: Compile and run without deleting classes after execute\n\t-d: Compile all java files in current directory\n\t-0: Show only error messages\n${DGY}Author:${NC} Oleg Karataev (CrazyDoctor)" && exit 0
+}
+
+install
+
+if [[ -z $* ]]
+then
+	default
+	exit 0
+fi
+
+while getopts ":crhsd0" o
+do
+case $o in
+	c)	compile "${@:2}";;
+	r)	run $2;;
+	h)	helpmsg;;
+	s)	safeCompileRun "${@:2}";;
+	d)	dir;;
+	0)	SWM=0 
+		if [[ $OPTIND == 2 ]]; then
+			default
+			exit 0
+		fi
+		;;	
+	*)	error "illegal option" 1 && exit 1;;
+esac
+done
+
+if [[ $OPTIND == 1 ]]
+then
+	FN="${@:1}"
+	FS=$(echo $FN | tr " " "\n")
+	for F in $FS; do
+		if [ -f "$F.java" ]; then
+			CERR=$(javac $F.java 2>&1)
+			if [ -f "$F.class" ]; then
+				success "$F.java compiled"
+				java $F
+				rm *.class
+			else
+				error "$CERR" 2 && if [ -f "$F.class" ]; then rm $F.class; fi && exit 1
+			fi
+		else
+			error "File $FN.java does not exist" && exit 1
+		fi
+	done
+fi 
