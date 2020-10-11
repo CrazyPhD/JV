@@ -10,8 +10,8 @@
 #	-s <filename...>: Compile and run without deleting classes after execute
 #	-d: Compile *.java in current directory
 #	-0: Show only error messages
-# Author: Oleg Karataev (CrazyDoctor)
-# Date: 04.10.2020, 05:34
+# Author: CrazyDoctor
+# Date: 28.09.2020, 02:51
 # Version: 1.0
 
 R='\033[0;31m'
@@ -66,7 +66,7 @@ install() {
 }
 
 mainclass() {
-	echo $(grep -E "*public\s+static\s+void\s+main\s*\(*\)*" *.java | awk -F ":" '{print $1}' | awk -F "." '{print $1}')
+	echo $(grep -EH "*public\s+static\s+void\s+main\s*\(*\)*" *.java | awk -F ":" '{print $1}' | awk -F "." '{print $1}')
 }
 
 default() {
@@ -153,7 +153,7 @@ safeCompileRun() {
 }
 
 helpmsg() {
-	echo -e "${DGY}JV 1.0${NC}\n${DGY}Description:${NC}\n\tSimple utility to compile and run java programs via one command.\n${DGY}Usage:${NC}\n\t jv [-0cdhrs] [filename...]\n${DGY}Options:${NC}\n\t-c <filename...>: Compile only\n\t-r <filename>: Run precompiled class\n\t-h: Help message\n\t-s <filename...>: Compile and run without deleting classes after execute\n\t-d: Compile all java files in current directory\n\t-0: Show only error messages\n${DGY}Author:${NC} Oleg Karataev (CrazyDoctor)" && exit 0
+	echo -e "${DGY}JV 1.0${NC}\n${DGY}Description:${NC}\n\tSimple utility to compile and run java programs via one command.\n${DGY}Usage:${NC}\n\t jv [-0cdhrs] [filename...]\n${DGY}Options:${NC}\n\t-c <filename...>: Compile only\n\t-r <filename>: Run precompiled class\n\t-h: Help message\n\t-s <filename...>: Compile and run without deleting classes after execute\n\t-d: Compile all java files in current directory\n\t-0: Show only error messages\n${DGY}Author:${NC} CrazyDoctor" && exit 0
 }
 
 install
